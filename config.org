@@ -8,16 +8,22 @@
 - [[#important-programs-to-load-first][IMPORTANT PROGRAMS TO LOAD FIRST]]
   - [[#elpaca-package-manager][Elpaca Package Manager]]
   - [[#load-the-evil][Load the EVIL]]
+  - [[#helpers][Helpers]]
   - [[#keybindings][Keybindings]]
 - [[#visual-preferences---gui][VISUAL PREFERENCES - GUI]]
-  - [[#disable-some-default-emacs-items][Disable some default emacs items]]
+  - [[#disable-some-default-emacs-item][Disable some default emacs item]]
   - [[#line-numbers][Line Numbers]]
-  - [[#the-infamous-text-wrap][The *infamous* text wrap]]
   - [[#doom-theme][Doom Theme]]
-  - [[#fonts][Fonts]]
+  - [[#fontstext][Fonts/Text]]
+- [[#completions][Completions]]
+  - [[#company-mode][Company Mode]]
 - [[#org-mode][ORG MODE]]
   - [[#enable-table-of-contents][Enable Table of Contents]]
   - [[#org-bullets][Org Bullets]]
+- [[#languages][Languages]]
+  - [[#lsp][LSP]]
+  - [[#treesitter][Treesitter]]
+  - [[#debugger][Debugger]]
 - [[#which-key][WHICH-KEY]]
 
 * IMPORTANT PROGRAMS TO LOAD FIRST
@@ -89,6 +95,7 @@
     (setq evil-want-keybinding nil)
     (setq evil-vsplit-window-right t)
     (setq evil-split-window-below t)
+    :config
     (evil-mode 1))
   (use-package evil-collection
     :after evil
@@ -102,6 +109,27 @@
   (use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
 #+end_src
 
+** Helpers
+#+begin_src emacs-lisp
+  (setq config-file-location "~/.config/emacs/config.org")
+
+  (defun open-config-file ()
+    (interactive)
+    (find-file config-file-location))
+
+  (defun reload-config-file ()
+    (interactive)
+    (org-babel-load-file config-file-location))
+
+  (defun open-eshell-below ()
+    "Open an eshell in a new horizontally split window."
+    (interactive)
+    (split-window-below)
+    (other-window 1)
+    (eshell))
+
+#+end_src
+
 ** Keybindings
 
 #+begin_src emacs-lisp
@@ -111,27 +139,45 @@
 
     ;; Set 'SPC' to be our global leader key
     (general-create-definer austin/leader-keys
-			    :states '(normal insert visual emacs)
-			    :keymaps 'override
-			    :prefix "SPC"
-			    :global-prefix "M-SPC") ;; access leader in insert mode
+  			    :states '(normal insert visual emacs)
+  			    :keymaps 'override
+  			    :prefix "SPC"
+  			    :global-prefix "M-SPC") ;; access leader in insert mode
 
     (austin/leader-keys
-     "b" '(:ignore t :wk "buffer")
-     "bb" '(switch-to-buffer :wk "Switch buffer")
-     "bk" '(kill-this-buffer :wk "Kill this buffer")
-     "bn" '(next-buffer :wk "Next buffer")
-     "bp" `(previous-buffer :wk "Previous buffer")
-     "br" `(revert-buffer :wk "Reload Buffer"))
+     "b"   '(:ignore t :wk "buffers")
+     "bb"  '(switch-to-buffer :wk "switch buffer")
+     "bk"  'kill-this-buffer :wk "kill this buffer"
+     "bn"  '(next-buffer :wk "next buffer")
+     "bp"  '(previous-buffer :wk "previous buffer")
+     "br"  '(revert-buffer :wk "reload Buffer")
+     
+     "f"   '(:ignore t :wk "files")
+     "ff"  '(find-file :wk "find file")
+     "fh"  '((lambda () (interactive) (dired "~")) :wk "Open Home")
+     "fs"  '(:ignore t :wk "search files")
+     "fg"  '(:ignore t :wk "grep files")
+     "fr"  '(:ignot t :wk "reload")
+     "frc" '(reload-config-file :wk "reload config file")
+     "fo"  '(:ignore t :wk "open files")
+     "foh" '(:ignore t :wk "open home directory")
+
+     "o"   '(:ignore t :wk "open")
+     "ot"  '(open-eshell-below :wk "open terminal")
+     "oc"  '(open-config-file :wk "open config file")
+
+     "x"   '(execute-extended-command :wk "M-x")
+     ":"   '(eval-expression :wk "Eval")
     )
+  )
 #+end_src
 
 * VISUAL PREFERENCES - GUI
 
-** Disable some default emacs items
-
+** Disable some default emacs item
 *** Disable Toolbar + Scrollbars
 #+begin_src emacs-lisp
+  (setq inhibit-startup-screen t)
   (tool-bar-mode -1)
   (scroll-bar-mode -1)
 #+end_src
@@ -139,12 +185,7 @@
 ** Line Numbers
 #+begin_src emacs-lisp
   (global-display-line-numbers-mode 1)
-  (setq display-line-numbers 'relative)
-#+end_src
-
-** The *infamous* text wrap
-#+begin_src emacs-lisp
-  (global-visual-line-mode t)
+  (setq display-line-numbers-type 'relative)
 #+end_src
 
 ** Doom Theme
@@ -168,30 +209,38 @@
   (doom-themes-org-config))
 #+end_src
 
-** Fonts
+** Fonts/Text
 #+begin_src emacs-lisp
 
-  ;; Font Style 
-  (setq-default font-height 120)
-  (setq-default line-spacing 0.12)
+      ;; Text Wrap
+        (global-visual-line-mode nil)
+        ;; Font Style 
+        (setq-default font-height 120)
+        (setq-default line-spacing 0.12)
 
-(let ((font-name "Hasklug Nerd Font Mono"))
-  (when (member font-name (font-family-list))
-    (set-face-attribute 'default nil
-                        :font font-name
-                        :height font-height
-                        :weight 'normal)))
+      (let ((font-name "Hasklug Nerd Font Mono"))
+        (when (member font-name (font-family-list))
+          (set-face-attribute 'default nil
+                              :font font-name
+                              :height font-height
+                              :weight 'regular)))
+
+  (use-package nerd-icons-completion
+    :config
+    (nerd-icons-completion-mode))
 
 
 
-  ;; Make comments and keywords italics
-  (set-face-attribute 'font-lock-comment-face nil
-                      :slant 'italic)
-  (set-face-attribute 'font-lock-keyword-face nil
-                      :slant 'italic)
+        ;; Make comments and keywords italics
+        (set-face-attribute 'font-lock-comment-face nil
+                            :slant 'italic)
+        (set-face-attribute 'font-lock-keyword-face nil
+                            :slant 'italic)
 
 
 #+end_src
+
+* Completions
 
 #+begin_src emacs-lisp
   (use-package vertico
@@ -213,7 +262,22 @@
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles partial-completion))))
   (completion-category-defaults nil) ;; Disable defaults, use our settings
-  (completion-pcm-leading-wildcard t)) ;; Emacs 31: partial-completion behaves like substring
+  (completion-pcm-leading-wildcard t)) ;; Emacs 31: partial-completion behaves like substrin
+#+end_src
+
+** Company Mode
+#+begin_src emacs-lisp
+  (use-package company
+    :ensure t
+    :demand t
+    :hook (after-init . global-company-mode)
+    :custom
+      (company-idle-delay 0.2)                ;; how long to wait before popup
+      (company-minimum-prefix-length 1)       ;; start completing after first char
+      (company-tooltip-align-annotations t)   ;; align annotation to the right
+      (company-selection-wrap-around t)       ;; cycle through candidates
+      (company-show-numbers t))                ;; quick selection via M-<number>
+
 #+end_src
 
 * ORG MODE
@@ -232,21 +296,46 @@
   (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
 #+end_src
 
+* Languages
+** LSP
+#+begin_src emacs-lisp
+(use-package lsp-mode
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  :hook ((emacs-lisp-mode . lsp)
+         (lsp-mode . lsp-enable-which-key-integration))
+  :commands lsp)
+  
+#+end_src
+
+** Treesitter
+#+begin_src emacs-lisp
+(use-package treesit-auto
+  :config
+  (global-treesit-auto-mode))
+#+end_src
+
+** Debugger
+#+begin_src emacs-lisp
+(use-package dap-mode)
+#+end_src
+
 * WHICH-KEY
 #+begin_src emacs-lisp
-(use-package which-key
-  :config
-  (setq which-key-side-window-location 'bottom
-        which-key-sort-order #'which-key-key-order-alpha
-        which-key-sort-uppercase-first nil
-        which-key-add-column-padding 1
-        which-key-max-display-columns nil
-        which-key-min-display-lines 6
-        which-key-side-window-slot -10
-        which-key-side-window-max-height 0.25
-        which-key-idle-delay 0
-        which-key-max-description-length 25
-        which-key-allow-imprecise-window-fit t
-        which-key-separator " → ")
-  (which-key-mode 1))
+  (use-package which-key
+    :config
+    (setq which-key-side-window-location 'bottom
+          which-key-sort-order #'which-key-key-order-alpha
+          which-key-sort-uppercase-first nil
+          which-key-add-column-padding 1
+          which-key-max-display-columns nil
+          which-key-min-display-lines 6
+          which-key-side-window-slot -10
+          which-key-side-window-max-height 0.25
+          which-key-idle-delay 0
+          which-key-max-description-length 25
+          which-key-allow-imprecise-window-fit t
+          which-key-separator " → ")
+    (which-key-mode 1))
 #+end_src
+
