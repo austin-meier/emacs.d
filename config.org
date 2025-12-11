@@ -15,6 +15,7 @@
   - [[#line-numbers][Line Numbers]]
   - [[#doom-theme][Doom Theme]]
   - [[#fontstext][Fonts/Text]]
+  - [[#dired][Dired]]
 - [[#completions][Completions]]
   - [[#company-mode][Company Mode]]
 - [[#org-mode][ORG MODE]]
@@ -145,19 +146,21 @@
   			    :global-prefix "M-SPC") ;; access leader in insert mode
 
     (austin/leader-keys
+     ;; buffers menu
      "b"   '(:ignore t :wk "buffers")
      "bb"  '(switch-to-buffer :wk "switch buffer")
-     "bk"  'kill-this-buffer :wk "kill this buffer"
+     "bk"  '(kill-this-buffer :wk "kill this buffer")
      "bn"  '(next-buffer :wk "next buffer")
      "bp"  '(previous-buffer :wk "previous buffer")
      "br"  '(revert-buffer :wk "reload Buffer")
      
+     ;; files menu
      "f"   '(:ignore t :wk "files")
      "ff"  '(find-file :wk "find file")
      "fh"  '((lambda () (interactive) (dired "~")) :wk "Open Home")
      "fs"  '(:ignore t :wk "search files")
      "fg"  '(:ignore t :wk "grep files")
-     "fr"  '(:ignot t :wk "reload")
+     "fr"  '(:ignore t :wk "reload")
      "frc" '(reload-config-file :wk "reload config file")
      "fo"  '(:ignore t :wk "open files")
      "foh" '(:ignore t :wk "open home directory")
@@ -166,9 +169,30 @@
      "ot"  '(open-eshell-below :wk "open terminal")
      "oc"  '(open-config-file :wk "open config file")
 
+     ;; help menu
+     "h"   '(:ignore t :wk "help")
+     "hh"  'help
+     "hb"  'describe-bindings
+     "hd"  '(:ignore t :wk "describe")
+     "hdf" 'describe-function
+     "hdk" 'describe-key
+
+     ;; window menu
+     "w"   '(:ignore t :wk "window")
+     "wl"  'split-window-right
+     "wj"  'split-window-below
+
+     ;; emacs bindings
      "x"   '(execute-extended-command :wk "M-x")
      ":"   '(eval-expression :wk "Eval")
     )
+
+    (general-def 'normal override
+      "C-j" 'evil-window-down
+      "C-k" 'evil-window-up
+      "C-l" 'evil-window-right
+      "C-h" 'evil-window-left
+      )
   )
 #+end_src
 
@@ -240,6 +264,10 @@
 
 #+end_src
 
+** Dired
+#+begin_src emacs-lisp
+
+#+end_src
 * Completions
 
 #+begin_src emacs-lisp
@@ -301,7 +329,7 @@
 #+begin_src emacs-lisp
 (use-package lsp-mode
   :init
-  (setq lsp-keymap-prefix "C-c l")
+  (setq lsp-keymap-prefix "SPC c")
   :hook ((emacs-lisp-mode . lsp)
          (lsp-mode . lsp-enable-which-key-integration))
   :commands lsp)
