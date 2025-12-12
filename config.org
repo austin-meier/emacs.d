@@ -122,11 +122,22 @@
     (interactive)
     (org-babel-load-file config-file-location))
 
+  (defun open-window-below ()
+    "Open and jump to window below you"
+    (interactive)
+    (split-window-below)
+    (other-window 1))
+
+  (defun open-window-right ()
+    "Open and jump to window below you"
+    (interactive)
+    (split-window-right)
+    (other-window 1))
+
   (defun open-eshell-below ()
     "Open an eshell in a new horizontally split window."
     (interactive)
-    (split-window-below)
-    (other-window 1)
+    (open-window-below)
     (eshell))
 
 #+end_src
@@ -149,7 +160,7 @@
      ;; buffers menu
      "b"   '(:ignore t :wk "buffers")
      "bb"  '(switch-to-buffer :wk "switch buffer")
-     "bk"  '(kill-this-buffer :wk "kill this buffer")
+     "bk"  '((lambda () (interactive) (kill-this-buffer)) :wk "kill this buffer")
      "bn"  '(next-buffer :wk "next buffer")
      "bp"  '(previous-buffer :wk "previous buffer")
      "br"  '(revert-buffer :wk "reload Buffer")
@@ -176,15 +187,17 @@
      "hd"  '(:ignore t :wk "describe")
      "hdf" 'describe-function
      "hdk" 'describe-key
+     "hds" 'describe-symbol
 
      ;; window menu
      "w"   '(:ignore t :wk "window")
-     "wl"  'split-window-right
-     "wj"  'split-window-below
+     "wl"  'open-window-right
+     "wj"  'open-window-below
+     "wq"  'delete-window
 
      ;; emacs bindings
-     "x"   '(execute-extended-command :wk "M-x")
-     ":"   '(eval-expression :wk "Eval")
+     ":"   '(execute-extended-command :wk "M-x")
+     "x"   '(eval-expression :wk "Eval")
     )
 
     (general-def 'normal override
@@ -327,13 +340,13 @@
 * Languages
 ** LSP
 #+begin_src emacs-lisp
-(use-package lsp-mode
-  :init
-  (setq lsp-keymap-prefix "SPC c")
-  :hook ((emacs-lisp-mode . lsp)
-         (lsp-mode . lsp-enable-which-key-integration))
-  :commands lsp)
-  
+  (use-package lsp-mode
+    :init
+    (setq lsp-keymap-prefix "SPC c")
+    :hook ((emacs-lisp-mode . lsp)
+           (lsp-mode . lsp-enable-which-key-integration))
+    :commands lsp)
+    
 #+end_src
 
 ** Treesitter
