@@ -11,7 +11,8 @@
   - [[#evil-vim-mode][evil vim mode]]
   - [[#helpers][helpers]]
   - [[#keybindings][Keybindings]]
-- [[#visual-preferences---gui][VISUAL PREFERENCES - GUI]]
+- [[#gui-modifications][gui modifications]]
+  - [[#ansi-color][ansi color]]
   - [[#disable-some-default-emacs-item][Disable some default emacs item]]
   - [[#line-numbers][Line Numbers]]
   - [[#doom-theme][Doom Theme]]
@@ -294,7 +295,21 @@ Setup dash for more elegant emacs lisp programming
     )
 #+end_src
 
-* VISUAL PREFERENCES - GUI
+* gui modifications
+
+** ansi color
+#+begin_src emacs-lisp
+  (require 'ansi-color)
+
+  (defun apply-ansi-color ()
+    (ansi-color-apply-on-region eshell-last-output-start
+                                eshell-last-output-end))
+
+  (add-hook 'eshell-output-filter-functions
+            'apply-ansi-color)
+
+  (setenv "TERM" "xterm-256color")
+#+end_src
 
 ** Disable some default emacs item
 *** Disable Toolbar + Scrollbars
