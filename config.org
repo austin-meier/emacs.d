@@ -1,11 +1,12 @@
-#+TITLE: Austin's EMACS config
 #+AUTHOR: Austin Meier
+#+TITLE: Austin's EMACS config
 #+DESCRIPTION: Austin's personal emacs configuration file
 #+STARTUP showeverything
 #+OPTIONS toc:2
 
 * TABLE OF CONTENTS :toc:
 - [[#priority][Priority]]
+  - [[#cross-platform][cross-platform]]
   - [[#elpaca][elpaca]]
   - [[#evil-vim-mode][evil vim mode]]
   - [[#helpers][helpers]]
@@ -15,60 +16,67 @@
   - [[#line-numbers][Line Numbers]]
   - [[#doom-theme][Doom Theme]]
   - [[#fontstext][Fonts/Text]]
-  - [[#dired][Dired]]
 - [[#completions][Completions]]
+  - [[#ripgrep][ripgrep]]
+  - [[#vertico][Vertico]]
   - [[#company-mode][Company Mode]]
-- [[#org-mode][ORG MODE]]
+- [[#org-mode-configurations][Org Mode Configurations]]
   - [[#enable-table-of-contents][Enable Table of Contents]]
   - [[#org-bullets][Org Bullets]]
-- [[#languages][Languages]]
+- [[#plugins][Plugins]]
   - [[#lsp][LSP]]
   - [[#treesitter][Treesitter]]
   - [[#debugger][Debugger]]
-- [[#which-key][WHICH-KEY]]
+  - [[#which-key][Which-Key]]
 
 * Priority
 
+** cross-platform
+#+begin_src emacs-lisp
+#+end_src
+
 ** elpaca
 #+begin_src emacs-lisp
-(defvar elpaca-installer-version 0.11)
-(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
-(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
-(defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
-(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-                              :ref nil :depth 1 :inherit ignore
-                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                              :build (:not elpaca--activate-package)))
-(let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
-       (build (expand-file-name "elpaca/" elpaca-builds-directory))
-       (order (cdr elpaca-order))
-       (default-directory repo))
-  (add-to-list 'load-path (if (file-exists-p build) build repo))
-  (unless (file-exists-p repo)
-    (make-directory repo t)
-    (when (<= emacs-major-version 28) (require 'subr-x))
-    (condition-case-unless-debug err
-        (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
-                  ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
-                                                  ,@(when-let* ((depth (plist-get order :depth)))
-                                                      (list (format "--depth=%d" depth) "--no-single-branch"))
-                                                  ,(plist-get order :repo) ,repo))))
-                  ((zerop (call-process "git" nil buffer t "checkout"
-                                        (or (plist-get order :ref) "--"))))
-                  (emacs (concat invocation-directory invocation-name))
-                  ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
-                                        "--eval" "(byte-recompile-directory \".\" 0 'force)")))
-                  ((require 'elpaca))
-                  ((elpaca-generate-autoloads "elpaca" repo)))
-            (progn (message "%s" (buffer-string)) (kill-buffer buffer))
-          (error "%s" (with-current-buffer buffer (buffer-string))))
-      ((error) (warn "%s" err) (delete-directory repo 'recursive))))
-  (unless (require 'elpaca-autoloads nil t)
-    (require 'elpaca)
-    (elpaca-generate-autoloads "elpaca" repo)
-    (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
-(add-hook 'after-init-hook #'elpaca-process-queues)
-(elpaca `(,@elpaca-order))
+  (defvar elpaca-installer-version 0.11)
+  (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+  (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+  (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+  (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                                :ref nil :depth 1 :inherit ignore
+                                :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                                :build (:not elpaca--activate-package)))
+  (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+         (build (expand-file-name "elpaca/" elpaca-builds-directory))
+         (order (cdr elpaca-order))
+         (default-directory repo))
+    (add-to-list 'load-path (if (file-exists-p build) build repo))
+    (unless (file-exists-p repo)
+      (make-directory repo t)
+      (when (<= emacs-major-version 28) (require 'subr-x))
+      (condition-case-unless-debug err
+          (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                    ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                    ,@(when-let* ((depth (plist-get order :depth)))
+                                                        (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                    ,(plist-get order :repo) ,repo))))
+                    ((zerop (call-process "git" nil buffer t "checkout"
+                                          (or (plist-get order :ref) "--"))))
+                    (emacs (concat invocation-directory invocation-name))
+                    ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                          "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                    ((require 'elpaca))
+                    ((elpaca-generate-autoloads "elpaca" repo)))
+              (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+            (error "%s" (with-current-buffer buffer (buffer-string))))
+        ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+    (unless (require 'elpaca-autoloads nil t)
+      (require 'elpaca)
+      (elpaca-generate-autoloads "elpaca" repo)
+      (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
+  (add-hook 'after-init-hook #'elpaca-process-queues)
+  (when (eq system-type 'windows-nt)
+    (elpaca-no-symlink-mode))
+  (elpaca `(,@elpaca-order))
 #+end_src
 
 ** evil vim mode
@@ -96,6 +104,7 @@
     (setq evil-want-keybinding nil)
     (setq evil-vsplit-window-right t)
     (setq evil-split-window-below t)
+    (setq evil-undo-system 'undo-redo)
     :config
     (evil-mode 1))
   (use-package evil-collection
@@ -122,149 +131,159 @@ Setup dash for more elegant emacs lisp programming
 #+end_src
 
 #+begin_src emacs-lisp
-    (setq config-file-location "~/.config/emacs/config.org")
+  (setq config-file-location "~/.config/emacs/config.org")
 
-    (defun open-config-file ()
-      (interactive)
-      (find-file config-file-location))
+  (defun open-config-file ()
+    (interactive)
+    (find-file config-file-location))
 
-    (defun reload-config-file ()
-      (interactive)
-      (org-babel-load-file config-file-location))
+  (defun reload-config-file ()
+    (interactive)
+    (org-babel-load-file config-file-location))
 
-    (defun open-window-below ()
-      "Open and jump to window below you"
-      (interactive)
-      (split-window-below)
-      (other-window 1))
+  (defun open-window-below ()
+    "Open and jump to window below you"
+    (interactive)
+    (split-window-below)
+    (other-window 1))
 
-    (defun open-window-right ()
-      "Open and jump to window below you"
-      (interactive)
-      (split-window-right)
-      (other-window 1))
+  (defun open-window-right ()
+    "Open and jump to window below you"
+    (interactive)
+    (split-window-right)
+    (other-window 1))
 
-    (defun open-eshell-below ()
-      "Open an eshell in a new horizontally split window."
-      (interactive)
-      (open-window-below)
-      (eshell))
+  (defun open-eshell-below ()
+    "Open an eshell in a new horizontally split window."
+    (interactive)
+    (open-window-below)
+    (eshell))
 
 #+end_src
 
 ** Keybindings
 
 #+begin_src emacs-lisp
-    (use-package general
-      :demand t
-      :config
-      (general-evil-setup)
+  (use-package general
+    :demand t
+    :config
+    (general-evil-setup)
 
-      ;; Set 'SPC' to be our global leader key
-      (general-create-definer austin/leader-keys
-        :states '(normal insert visual emacs)
-        :keymaps 'override
-        :prefix "SPC"
-        :global-prefix "M-SPC") ;; access leader in insert mode
+    ;; Set 'SPC' to be our global leader key
+    (general-create-definer austin/leader-keys
+      :states '(normal insert visual emacs)
+      :keymaps 'override
+      :prefix "SPC"
+      :global-prefix "M-SPC") ;; access leader in insert mode
 
-      (austin/leader-keys
-        ;; buffers menu
-        "b"   '(:ignore t :wk "buffers")
-        "bb"  '(switch-to-buffer :wk "switch buffer")
-        "bk"  '((lambda () (interactive) (kill-this-buffer)) :wk "kill this buffer")
-        "bn"  '(next-buffer :wk "next buffer")
-        "bp"  '(previous-buffer :wk "previous buffer")
-        "br"  '(revert-buffer :wk "reload Buffer")
-        
-        ;; files menu
-        "f"   '(:ignore t :wk "files")
-        "ff"  '(find-file :wk "find file")
-        "fs"  '(:ignore t :wk "search files")
-        "fg"  '(:ignore t :wk "grep files")
-        "fr"  '(:ignore t :wk "reload")
-        "frc" '(reload-config-file :wk "reload config file")
-        "fo"  '(:ignore t :wk "open files")
+    (austin/leader-keys
+      ; buffers menu
+      "SPC"  '(switch-to-buffer :wk "switch buffer")
+      "b"   '(:ignore t :wk "buffers")
+      "bb"  '(switch-to-buffer :wk "switch buffer")
+      "bk"  '((lambda () (interactive) (kill-this-buffer)) :wk "kill this buffer")
+      "bn"  '(next-buffer :wk "next buffer")
+      "bp"  '(previous-buffer :wk "previous buffer")
+      "br"  '(revert-buffer :wk "reload Buffer")
+      
+      ;; files menu
+      "f"   '(:ignore t :wk "files"-)
+      "ff"  '(find-file :wk "find file")
+      "fs"  '(:ignore t :wk "search files")
+      "fg"  '(:ignore t :wk "grep files")
+      "fr"  '(:ignore t :wk "reload")
+      "frc" '(reload-config-file :wk "reload config file")
+      "fo"  '(:ignore t :wk "open files")
 
-        "o"   '(:ignore t :wk "open")
-        "ot"  '(open-eshell-below :wk "open terminal")
-        "oc"  '(open-config-file :wk "open config file")
-        "oh"  `(,(cmd! (dired "~")) :wk "Open Home")
+      "o"   '(:ignore t :wk "open")
+      "od"  '(dired-jump :wk "open directory")
+      "ot"  '(open-eshell-below :wk "open terminal")
+      "oc"  '(open-config-file :wk "open config file")
+      "oh"  `(,(cmd! (dired "~")) :wk "open home")
+      "op"  '(project-switch-project :wk "open project")
 
-        ;; help menu
-        "h"   '(:ignore t :wk "help")
-        "hh"  'help
-        "hd"  '(:ignore t :wk "describe")
-        "hdb" 'describe-bindings
-        "hdm" 'describe-mode
-        "hdf" 'describe-function
-        "hdk" 'describe-key
-        "hds" 'describe-symbol
+      ;; projects menu
+      "p"   '(:ignore t :wk "projects")
+      "po"  '(project-switch-project :wk "open project")
+      "p k"  '(project-kill-buffers :wk "kill project buffer")
+      "p SPC"  '(project-switch-to-buffer :wk "switch project buffer")
 
-        ;; window menu
-        "w"   '(:ignore t :wk "window")
-        "wl"  'open-window-right
-        "wj"  'open-window-below
-        "wq"  'delete-window
+      ;; help menu
+      "h"   '(:ignore t :wk "help")
+      "hh"  'help
+      "hd"  '(:ignore t :wk "describe")
+      "hdb" 'describe-bindings
+      "hdm" 'describe-mode
+      "hdf" 'describe-function
+      "hdk" 'describe-key
+      "hds" 'describe-symbol
+      "hdv" 'describe-variable
 
-        ;; emacs bindings
-        ":"   '(execute-extended-command :wk "M-x")
-        "x"   '(eval-expression :wk "Eval")
+      ;; window menu
+      "w"   '(:ignore t :wk "window")
+      "wl"  'open-window-right
+      "wj"  'open-window-below
+      "wq"  'delete-window
 
-        ;; lsp
-        "c"   '(:ignore t :wk "lsp")
+      ;; emacs bindings
+      ":"   '(execute-extended-command :wk "m-x")
+      "x"   '(eval-expression :wk "emacs-eval")
 
-        "ca"  '(:ignore t :wk "actions")
-        "caa" '(lsp-execute-code-action :wk "code action")
-        "car" '(lsp-rename :wk "rename")
-        "cao" '(lsp-organize-imports :wk "organize imports")
-        "caf" '(lsp-format-buffer :wk "format buffer")
-        "cas" '(lsp-signature-activate :wk "signature help")
+      ;; lsp
+      "c"   '(:ignore t :wk "lsp")
 
-        "cg"   '(:ignore t :wk "goto")
-        "cgd"  '(lsp-find-definition :wk "definition")
-        "cgD"  '(lsp-find-declaration :wk "declaration")
-        "cgi"  '(lsp-find-implementation :wk "implementation")
-        "cgt"  '(lsp-find-type-definition :wk "type definition")
-        "cgr"  '(lsp-find-references :wk "references")
-        "cgs"  '(lsp-document-symbol :wk "document symbols")
-        "cgw"  '(lsp-workspace-symbol :wk "workspace symbols")
+      "ca"  '(:ignore t :wk "actions")
+      "caa" '(lsp-execute-code-action :wk "code action")
+      "car" '(lsp-rename :wk "rename")
+      "cao" '(lsp-organize-imports :wk "organize imports")
+      "caf" '(lsp-format-buffer :wk "format buffer")
+      "cas" '(lsp-signature-activate :wk "signature help")
 
-        "cp"   '(:ignore t :wk "peek")
-        "cpd"  '(lsp-ui-peek-find-definitions :wk "peek def")
-        "cpi"  '(lsp-ui-peek-find-implementation :wk "peek impl")
-        "cpr"  '(lsp-ui-peek-find-references :wk "peek refs")
+      "cg"   '(:ignore t :wk "goto")
+      "cgd"  '(lsp-find-definition :wk "definition")
+      "cgD"  '(lsp-find-declaration :wk "declaration")
+      "cgi"  '(lsp-find-implementation :wk "implementation")
+      "cgt"  '(lsp-find-type-definition :wk "type definition")
+      "cgr"  '(lsp-find-references :wk "references")
+      "cgs"  '(lsp-document-symbol :wk "document symbols")
+      "cgw"  '(lsp-workspace-symbol :wk "workspace symbols")
 
-        "ce"   '(:ignore t :wk "errors")
-        "cen"  '(flymake-goto-next-error :wk "next error")
-        "cep"  '(flymake-goto-prev-error :wk "previous error")
-        "cel"  '(lsp-ui-flycheck-list :wk "error list")
+      "cp"   '(:ignore t :wk "peek")
+      "cpd"  '(lsp-ui-peek-find-definitions :wk "peek def")
+      "cpi"  '(lsp-ui-peek-find-implementation :wk "peek impl")
+      "cpr"  '(lsp-ui-peek-find-references :wk "peek refs")
 
-        "cw"   '(:ignore t :wk "workspace")
-        "cwr"  '(lsp-workspace-restart :wk "restart")
-        "cwo"  '(lsp-workspace-folders-open :wk "folders")
-        "cwa"  '(lsp-workspace-folders-add :wk "add folder")
-        "cwd"  '(lsp-workspace-folders-remove :wk "remove folder")
+      "ce"   '(:ignore t :wk "errors")
+      "cen"  '(flymake-goto-next-error :wk "next error")
+      "cep"  '(flymake-goto-prev-error :wk "previous error")
+      "cel"  '(lsp-ui-flycheck-list :wk "error list")
 
-        "cu"   '(:ignore t :wk "ui")
-        "cud"  '(lsp-ui-doc-show :wk "show doc")
-        "cuh"  '(lsp-ui-doc-hide :wk "hide doc")
-        "cuj"  '(lsp-ui-doc-glance :wk "glance doc")
-        "cus"  '(lsp-ui-sideline-toggle-symbols-info :wk "sideline symbols")
+      "cw"   '(:ignore t :wk "workspace")
+      "cwr"  '(lsp-workspace-restart :wk "restart")
+      "cwo"  '(lsp-workspace-folders-open :wk "folders")
+      "cwa"  '(lsp-workspace-folders-add :wk "add folder")
+      "cwd"  '(lsp-workspace-folders-remove :wk "remove folder")
 
-        "ct"   '(:ignore t :wk "tree")
-        "ctt"  '(lsp-treemacs-symbols :wk "symbols tree")
-        "ctd"  '(lsp-treemacs-errors-list :wk "errors tree")
-        "ctr"  '(lsp-treemacs-references :wk "refs tree")
+      "cu"   '(:ignore t :wk "ui")
+      "cud"  '(lsp-ui-doc-show :wk "show doc")
+      "cuh"  '(lsp-ui-doc-hide :wk "hide doc")
+      "cuj"  '(lsp-ui-doc-glance :wk "glance doc")
+      "cus"  '(lsp-ui-sideline-toggle-symbols-info :wk "sideline symbols")
 
-        )
+      "ct"   '(:ignore t :wk "tree")
+      "ctt"  '(lsp-treemacs-symbols :wk "symbols tree")
+      "ctd"  '(lsp-treemacs-errors-list :wk "errors tree")
+      "ctr"  '(lsp-treemacs-references :wk "refs tree")
 
-      (general-def 'normal override
-        "C-j" 'evil-window-down
-        "C-k" 'evil-window-up
-        "C-l" 'evil-window-right
-        "C-h" 'evil-window-left
-        )
       )
+
+    (general-def 'normal override
+      "C-j" 'evil-window-down
+      "C-k" 'evil-window-up
+      "C-l" 'evil-window-right
+      "C-h" 'evil-window-left
+      )
+    )
 #+end_src
 
 * VISUAL PREFERENCES - GUI
@@ -335,11 +354,14 @@ Setup dash for more elegant emacs lisp programming
 
 #+end_src
 
-** Dired
-#+begin_src emacs-lisp
-#+end_src
 * Completions
 
+
+** ripgrep
+#+begin_src emacs-lisp
+  (setq xref-search-program 'ripgrep)
+#+end_src
+** Vertico
 #+begin_src emacs-lisp
   (use-package vertico
   :custom
@@ -349,6 +371,10 @@ Setup dash for more elegant emacs lisp programming
   ;; (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
   :init
   (vertico-mode))
+
+  (use-package savehist
+  :init
+  (savehist-mode))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -378,7 +404,7 @@ Setup dash for more elegant emacs lisp programming
 
 #+end_src
 
-* ORG MODE
+* Org Mode Configurations
 
 ** Enable Table of Contents
 #+begin_src emacs-lisp
@@ -394,7 +420,7 @@ Setup dash for more elegant emacs lisp programming
   (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
 #+end_src
 
-* Languages
+* Plugins
 ** LSP
 #+begin_src emacs-lisp
   (use-package lsp-mode
@@ -428,7 +454,7 @@ Setup dash for more elegant emacs lisp programming
 (use-package dap-mode)
 #+end_src
 
-* WHICH-KEY
+** Which-Key
 #+begin_src emacs-lisp
   (use-package which-key
     :config
