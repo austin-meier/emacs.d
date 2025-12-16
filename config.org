@@ -28,9 +28,17 @@
   - [[#treesitter][Treesitter]]
   - [[#debugger][Debugger]]
   - [[#which-key][Which-Key]]
+- [[#language-specific][Language Specific]]
+  - [[#clojure][Clojure]]
 
 * Priority
 
+TODO:
+- ripgrep/file searching by name and grep + project searching
+- paredit/smartparens
+- CIDER
+- color mode on eshell
+- debugger
 ** cross-platform
 #+begin_src emacs-lisp
 #+end_src
@@ -370,11 +378,9 @@ Setup dash for more elegant emacs lisp programming
   (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
   ;; (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
   :init
+  (savehist-mode)
   (vertico-mode))
 
-  (use-package savehist
-  :init
-  (savehist-mode))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -427,8 +433,7 @@ Setup dash for more elegant emacs lisp programming
     :config
     (setq lsp-headerline-breadcrumb-enable nil)
     :init
-    :hook ((emacs-lisp-mode . lsp)
-  	 (typescript-ts-mode . lsp)
+    :hook ((typescript-ts-mode . lsp)
   	 (lsp-mode . lsp-enable-which-key-integration))
     :commands lsp)
 
@@ -473,3 +478,13 @@ Setup dash for more elegant emacs lisp programming
     (which-key-mode 1))
 #+end_src
 
+* Language Specific
+** Clojure
+#+begin_src emacs-lisp
+    (use-package rainbow-delimiters)
+    (use-package clojure-ts-mode)
+
+    (add-hook 'clojure-ts-mode-hook
+    	  (lambda () (rainbow-delimiters-mode) (lsp)))
+    	
+#+end_src
