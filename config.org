@@ -29,7 +29,9 @@
   - [[#treesitter][Treesitter]]
   - [[#debugger][Debugger]]
   - [[#which-key][Which-Key]]
+  - [[#paredit][Paredit]]
 - [[#language-specific][Language Specific]]
+  - [[#emacs-lisp][Emacs lisp]]
   - [[#clojure][Clojure]]
 
 * Priority
@@ -493,13 +495,34 @@ Setup dash for more elegant emacs lisp programming
     (which-key-mode 1))
 #+end_src
 
+** Paredit
+#+begin_src emacs-lisp
+(use-package paredit)
+#+end_src
 * Language Specific
+** Emacs lisp
+#+begin_src emacs-lisp
+  (add-hook 'emacs-lisp-mode-hook
+            (lambda ()
+              (eldoc-mode)
+              (flymake-mode)
+              (outline-minor-mode)
+              (imenu-add-menubar-index)
+              (paredit-mode)
+              (rainbow-delimiters-mode)))
+#+end_src
 ** Clojure
 #+begin_src emacs-lisp
-    (use-package rainbow-delimiters)
-    (use-package clojure-ts-mode)
+  (use-package cider)
+  (use-package rainbow-delimiters)
+  (use-package clojure-ts-mode)
 
-    (add-hook 'clojure-ts-mode-hook
-    	  (lambda () (rainbow-delimiters-mode) (lsp)))
-    	
+  ;; Turn on rainbow delimeters and activate the LSP when entering
+  ;; a clojure file
+  (add-hook 'clojure-ts-mode-hook
+  	  (lambda ()
+  	    (paredit-mode)
+  	    (rainbow-delimiters-mode)
+  	    (lsp)))
+ 
 #+end_src
