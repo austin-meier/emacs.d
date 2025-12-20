@@ -355,22 +355,29 @@ Macros
 
 ** ansi color
 #+begin_src emacs-lisp
-  (require 'ansi-color)
-  (setenv "TERM" "xterm-256color")
+    (require 'ansi-color)
+    (setenv "TERM" "xterm-256color")
 
-  (add-hook 'eshell-mode-hook
-          (lambda ()
-            (require 'esh-ansi)
-            (setq eshell-ansi-color t)))
+    (add-hook 'eshell-mode-hook
+            (lambda ()
+              (require 'esh-ansi)
+              (setq eshell-ansi-color t)))
+
+  (defun my/eshell-remove-carriage-return (output)
+    "Replace carriage return characters with newline in Eshell output."
+    (replace-regexp-in-string "\r" "\n" output))
+
+  (add-hook 'eshell-preoutput-filter-functions
+            'my/eshell-remove-carriage-return)
 
 
-(defun my/eshell-apply-ansi-color ()
-  "Convert ANSI color sequences to faces."
-  (ansi-color-apply-on-region eshell-last-output-start
-                              eshell-last-output-end))
+  (defun my/eshell-apply-ansi-color ()
+    "Convert ANSI color sequences to faces."
+    (ansi-color-apply-on-region eshell-last-output-start
+                                eshell-last-output-end))
 
-(add-hook 'eshell-output-filter-functions
-          'my/eshell-apply-ansi-color)
+  (add-hook 'eshell-output-filter-functions
+            'my/eshell-apply-ansi-color)
 
 #+end_src
 
