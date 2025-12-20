@@ -19,8 +19,9 @@
   - [[#doom-theme][Doom Theme]]
   - [[#fontstext][Fonts/Text]]
 - [[#completions][Completions]]
-  - [[#ripgrep][ripgrep]]
   - [[#vertico][Vertico]]
+  - [[#orderless][orderless]]
+  - [[#consult][consult]]
   - [[#company-mode][Company Mode]]
 - [[#org-mode-configurations][Org Mode Configurations]]
   - [[#enable-table-of-contents][Enable Table of Contents]]
@@ -137,39 +138,67 @@ Macros
 (defmacro cmd! (&rest body)
   `(lambda () (interactive) ,@body))
 #+end_src
-Setup dash for more elegant emacs lisp programming
-#+begin_src emacs-lisp
-  (use-package dash)
-#+end_src
 
 #+begin_src emacs-lisp
-  (setq config-file-location "~/.config/emacs/config.org")
+    (setq config-file-location "~/.config/emacs/config.org")
 
-  (defun open-config-file ()
-    (interactive)
-    (find-file config-file-location))
+    (defun open-config-file ()
+      (interactive)
+      (find-file config-file-location))
 
-  (defun reload-config-file ()
-    (interactive)
-    (org-babel-load-file config-file-location))
+    (defun reload-config-file ()
+      (interactive)
+      (org-babel-load-file config-file-location))
 
-  (defun open-window-below ()
-    "Open and jump to window below you"
-    (interactive)
-    (split-window-below)
-    (other-window 1))
+    (defun open-window-below ()
+      "Open and jump to window below you"
+      (interactive)
+      (split-window-below)
+      (other-window 1))
 
-  (defun open-window-right ()
-    "Open and jump to window below you"
-    (interactive)
-    (split-window-right)
-    (other-window 1))
+    (defun open-window-right ()
+      "Open and jump to window below you"
+      (interactive)
+      (split-window-right)
+      (other-window 1))
 
-  (defun open-eshell-below ()
-    "Open an eshell in a new horizontally split window."
+    (defun open-eshell-below ()
+      "Open an eshell in a new horizontally split window."
+      (interactive)
+      (open-window-below)
+      (eshell))
+
+    (defun my/eshell-project-or-current-dir ()
+    "Open an eshell for the current project or current directory.
+
+  If the current buffer is part of a project (via `project.el`):
+  - Try to switch to an existing eshell buffer named after the project root.
+  - If it doesn't exist, create a new eshell in the project root.
+
+  If not in a project, open a standard eshell in the current buffer's directory."
     (interactive)
     (open-window-below)
-    (eshell))
+    (let* ((proj (project-current))
+           (default-dir (if proj
+                            (project-root proj)
+                          default-directory))
+           (eshell-name (if proj
+                            (concat "eshell-" (file-name-nondirectory
+                                               (directory-file-name default-dir)))
+                          nil)))
+      ;; If project-based eshell exists, switch to it
+      (if eshell-name
+          (let ((buf (get-buffer eshell-name)))
+            (if buf
+                (switch-to-buffer buf)
+              ;; Create new eshell in project root with the name
+              (let ((default-directory default-dir))
+                (eshell "new")
+                (rename-buffer eshell-name))))
+        ;; No project: just open regular eshell in current directory
+        (let ((default-directory default-dir))
+          (eshell)))))
+
 #+end_src
 
 ** Keybindings
@@ -198,16 +227,15 @@ Setup dash for more elegant emacs lisp programming
      
      ;; files menu
      "f"   '(:ignore t :wk "files"-)
-     "ff"  '(find-file :wk "find file")
-     "fs"  '(:ignore t :wk "search files")
-     "fg"  '(:ignore t :wk "grep files")
+     "ff"  '(consult-find :wk "find file")
+     "fg"  '(consult-ripgrep t :wk "grep files")
      "fr"  '(:ignore t :wk "reload")
      "frc" '(reload-config-file :wk "reload config file")
      "fo"  '(:ignore t :wk "open files")
 
      "o"   '(:ignore t :wk "open")
      "od"  '(dired-jump :wk "open directory")
-     "ot"  '(open-eshell-below :wk "open terminal")
+     "ot"  '(my/eshell-project-or-current-dir :wk "open terminal")
      "oc"  '(open-config-file :wk "open config file")
      "oh"  `(,(cmd! (dired "~")) :wk "open home")
      "op"  '(project-switch-project :wk "open project")
@@ -231,9 +259,10 @@ Setup dash for more elegant emacs lisp programming
 
      ;; window menu
      "w"   '(:ignore t :wk "window")
-     "wl"  'open-window-right
-     "wj"  'open-window-below
-     "wq"  'delete-window
+     "wl"  '(open-window-right :wk "open window right")
+     "wj"  '(open-window-below :wk "open window below")
+     "wq"  '(delete-window :wk "kill window")
+     "wk"  '(delete-window :wk "kill window")
 
      ;; emacs bindings
      ":"   '(execute-extended-command :wk "m-x")
@@ -296,22 +325,28 @@ Setup dash for more elegant emacs lisp programming
      "ed" '(eval-defun :which-key "eval defun"))
 
 
-
     (austin/leader-key
      :keymaps 'clojure-ts-mode-map
-     "e" '(:ignore t :which-key "eval")
-     "ee" '(cider-eval-last-sexp :which-key "eval last sexp")
-     "ed" '(cider-eval-defun-at-point :which-key "eval defun")
-     "eb" '(cider-eval-buffer :which-key "eval buffer")
-     "en" '(cider-eval-ns-form :which-key "cider eval ns")
-     "eN" '(cider-eval-ns :which-key "cider eval ns (all)")
-     "ep" '(cider-pprint-eval-last-sexp :which-key "cider pprint last sexp"))
+     "e" '(:ignore t :wk "eval")
+     "ee" '(cider-eval-last-sexp :wk "eval last sexp")
+     "ec" '(cider-pprint-eval-defun-to-commentp :wk "eval to comment")
+     "ed" '(cider-eval-defun-at-point :wk "eval defun")
+     "eb" '(cider-eval-buffer :wk "eval buffer")
+     "en" '(cider-eval-ns-form :wk "cider eval ns")
+     "eN" '(cider-eval-ns :wk "cider eval ns (all)")
+     "ep" '(cider-pprint-eval-last-sexp :wk "cider pprint last sexp"))
 
     (general-def 'normal override
       "C-j" 'evil-window-down
       "C-k" 'evil-window-up
       "C-l" 'evil-window-right
       "C-h" 'evil-window-left
+      )
+
+    (general-def 'visual override
+      "gc" 'comment-dwim 
+      "}" 'evil-forward-paragraph
+      "{" 'evil-backward-paragraph
       )
     )
 #+end_src
@@ -321,15 +356,22 @@ Setup dash for more elegant emacs lisp programming
 ** ansi color
 #+begin_src emacs-lisp
   (require 'ansi-color)
-
-  (defun apply-ansi-color ()
-    (ansi-color-apply-on-region eshell-last-output-start
-                                eshell-last-output-end))
-
-  (add-hook 'eshell-output-filter-functions
-            'apply-ansi-color)
-
   (setenv "TERM" "xterm-256color")
+
+  (add-hook 'eshell-mode-hook
+          (lambda ()
+            (require 'esh-ansi)
+            (setq eshell-ansi-color t)))
+
+
+(defun my/eshell-apply-ansi-color ()
+  "Convert ANSI color sequences to faces."
+  (ansi-color-apply-on-region eshell-last-output-start
+                              eshell-last-output-end))
+
+(add-hook 'eshell-output-filter-functions
+          'my/eshell-apply-ansi-color)
+
 #+end_src
 
 ** Disable some default emacs item
@@ -400,11 +442,6 @@ Setup dash for more elegant emacs lisp programming
 
 * Completions
 
-
-** ripgrep
-#+begin_src emacs-lisp
-  (setq xref-search-program 'ripgrep)
-#+end_src
 ** Vertico
 #+begin_src emacs-lisp
   (use-package vertico
@@ -419,6 +456,7 @@ Setup dash for more elegant emacs lisp programming
 
 #+end_src
 
+** orderless
 #+begin_src emacs-lisp
 (use-package orderless
   :custom
@@ -431,6 +469,13 @@ Setup dash for more elegant emacs lisp programming
   (completion-pcm-leading-wildcard t)) ;; Emacs 31: partial-completion behaves like substrin
 #+end_src
 
+** consult
+#+begin_src emacs-lisp
+(use-package consult
+  :ensure t
+  :custom
+  (consult-preview-at-point-mode))
+#+end_src
 ** Company Mode
 #+begin_src emacs-lisp
   (use-package company
@@ -465,19 +510,27 @@ Setup dash for more elegant emacs lisp programming
 * Plugins
 ** LSP
 #+begin_src emacs-lisp
-  (use-package lsp-mode
+  (use-package flycheck
+    :ensure t
+    :hook (lsp-mode . flycheck-mode))
+  (use-package
+    lsp-mode
     :config
     (setq lsp-headerline-breadcrumb-enable nil)
+    (setq lsp-diagnostics-provider :flycheck)
     :init
     :hook ((typescript-ts-mode . lsp)
-  	 (lsp-mode . lsp-enable-which-key-integration))
+         (lsp-mode . lsp-enable-which-key-integration))
     :commands lsp)
+
 
   (use-package lsp-ui
     :custom
+    (lsp-ui-sideline-show-diagnostics t)
     (lsp-ui-sideline-show-hover t)
-    (lsp-ui-sideline-delay 0.2))
-
+    (lsp-ui-sideline-ignore-duplicate t)
+    (lsp-ui-sideline-diagnostic-max-lines 2)
+    )
 #+end_src
 
 ** Treesitter
