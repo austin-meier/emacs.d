@@ -95,41 +95,42 @@ TODO:
 ** evil vim mode
 
 #+begin_src emacs-lisp
-  ;; Install use-package support
-  (elpaca elpaca-use-package
-    ;; Enable use-package :ensure support for Elpaca.
-    (elpaca-use-package-mode)
-    (setq elpaca-use-package-by-default t))
+    ;; Install use-package support
+    (elpaca elpaca-use-package
+      ;; Enable use-package :ensure support for Elpaca.
+      (elpaca-use-package-mode)
+      (setq elpaca-use-package-by-default t))
 
-  (elpaca-wait)
+    (elpaca-wait)
 
-  ;;When installing a package usVed in the init file itself,
-  ;;e.g. a package which adds a use-package key word,
-  ;;use the :wait recipe keyword to block until that package is installed/configured.
-  ;;For example:
-  ;;(use-package general :ensure (:wait t) :demand t)
+    ;;When installing a package usVed in the init file itself,
+    ;;e.g. a package which adds a use-package key word,
+    ;;use the :wait recipe keyword to block until that package is installed/configured.
+    ;;For example:
+    ;;(use-package general :ensure (:wait t) :demand t)
+    (use-package evil
+      :ensure t
+      :demand t
+      :init
+      (setq evil-want-integration t)
+      (setq evil-want-keybinding nil)
+      (setq evil-vsplit-window-right t)
+      (setq evil-split-window-below t)
+      (setq evil-emacs-state-modes nil)
+      (setq evil-undo-system 'undo-redo)
+      :config
+      (evil-mode 1))
 
-  (use-package evil
-    :ensure t
-    :demand t
-    :init
-    (setq evil-want-integration t)
-    (setq evil-want-keybinding nil)
-    (setq evil-vsplit-window-right t)
-    (setq evil-split-window-below t)
-    (setq evil-undo-system 'undo-redo)
-    :config
-    (evil-mode 1))
-  (use-package evil-collection
-    :after evil
-    :ensure t
-    :config
-    (evil-collection-init))
+    (use-package evil-collection
+      :after evil
+      :ensure t
+      :config
+      (evil-collection-init))
 
-  ;;Turns off elpaca-use-package-mode current declaration
-  ;;Note this will cause evaluate the declaration immediately. It is not deferred.
-  ;;Useful for configuring built-in emacs features.
-  (use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
+    ;;Turns off elpaca-use-package-mode current declaration
+    ;;Note this will cause evaluate the declaration immediately. It is not deferred.
+    ;;Useful for configuring built-in emacs features.
+    (use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
 #+end_src
 
 ** helpers
@@ -355,30 +356,25 @@ Macros
 
 ** ansi color
 #+begin_src emacs-lisp
-    (require 'ansi-color)
-    (setenv "TERM" "xterm-256color")
+  (require 'ansi-color)
 
-    (add-hook 'eshell-mode-hook
-            (lambda ()
-              (require 'esh-ansi)
-              (setq eshell-ansi-color t)))
-
-  (defun my/eshell-remove-carriage-return (output)
+  (defun austin/remove-carriage-return (output)
     "Replace carriage return characters with newline in Eshell output."
     (replace-regexp-in-string "\r" "\n" output))
 
-  (add-hook 'eshell-preoutput-filter-functions
-            'my/eshell-remove-carriage-return)
-
-
-  (defun my/eshell-apply-ansi-color ()
+  (defun austin/apply-ansi-color ()
     "Convert ANSI color sequences to faces."
     (ansi-color-apply-on-region eshell-last-output-start
                                 eshell-last-output-end))
+  (add-hook 'eshell-mode-hook
+            (lambda ()
+              (setq eshell-ansi-color t)
+  	    (setenv "TERM" "xterm-256color")
 
-  (add-hook 'eshell-output-filter-functions
-            'my/eshell-apply-ansi-color)
-
+  	    (add-hook 'eshell-output-filter-functions
+  		      'austin/apply-ansi-color)
+  	    (add-hook 'eshell-preoutput-filter-functions
+  		      'austin/remove-carriage-return)))
 #+end_src
 
 ** Disable some default emacs item
@@ -599,9 +595,13 @@ Macros
   ;; Turn on rainbow delimeters and activate the LSP when entering
   ;; a clojure file
   (add-hook 'clojure-ts-mode-hook
-  	  (lambda ()
-  	    (paredit-mode)
-  	    (rainbow-delimiters-mode)
-  	    (lsp)))
- 
+            (lambda ()
+              (paredit-mode)
+              (rainbow-delimiters-mode)
+              (lsp)))
+
+  ;; ;; For windows, I was getting an error on the jack-in about whatever shell intepreting the nrepl start cmd wrong
+  ;; (when (eq system-type 'windows-nt)
+  ;;   (setq cider-clojure-cli-parameters
+  ;;       "-Sdeps \'{:deps {nrepl/nrepl {:mvn/version \"1.5.1\"} cider/cider-nrepl {:mvn/version \"0.58.0\"}} :aliases {:cider/nrepl {:main-opts [\"-m\" \"nrepl.cmdline\" \"--middleware\" \"[cider.nrepl/cider-middleware]\"]}}}\' -M:cider/nrepl"))
 #+end_src
