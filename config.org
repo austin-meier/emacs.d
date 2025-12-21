@@ -27,9 +27,11 @@
   - [[#enable-table-of-contents][Enable Table of Contents]]
   - [[#org-bullets][Org Bullets]]
 - [[#plugins][Plugins]]
+  - [[#magit][magit]]
   - [[#lsp][LSP]]
   - [[#treesitter][Treesitter]]
   - [[#debugger][Debugger]]
+  - [[#treemacs][Treemacs]]
   - [[#which-key][Which-Key]]
   - [[#paredit][Paredit]]
 - [[#language-specific][Language Specific]]
@@ -141,35 +143,35 @@ Macros
 #+end_src
 
 #+begin_src emacs-lisp
-    (setq config-file-location "~/.config/emacs/config.org")
+  (setq config-file-location "~/.config/emacs/config.org")
 
-    (defun open-config-file ()
-      (interactive)
-      (find-file config-file-location))
+  (defun open-config-file ()
+    (interactive)
+    (find-file config-file-location))
 
-    (defun reload-config-file ()
-      (interactive)
-      (org-babel-load-file config-file-location))
+  (defun reload-config-file ()
+    (interactive)
+    (org-babel-load-file config-file-location))
 
-    (defun open-window-below ()
-      "Open and jump to window below you"
-      (interactive)
-      (split-window-below)
-      (other-window 1))
+  (defun open-window-below ()
+    "Open and jump to window below you"
+    (interactive)
+    (split-window-below)
+    (other-window 1))
 
-    (defun open-window-right ()
-      "Open and jump to window below you"
-      (interactive)
-      (split-window-right)
-      (other-window 1))
+  (defun open-window-right ()
+    "Open and jump to window below you"
+    (interactive)
+    (split-window-right)
+    (other-window 1))
 
-    (defun open-eshell-below ()
-      "Open an eshell in a new horizontally split window."
-      (interactive)
-      (open-window-below)
-      (eshell))
+  (defun open-eshell-below ()
+    "Open an eshell in a new horizontally split window."
+    (interactive)
+    (open-window-below)
+    (eshell))
 
-    (defun my/eshell-project-or-current-dir ()
+  (defun my/eshell-project-or-current-dir ()
     "Open an eshell for the current project or current directory.
 
   If the current buffer is part of a project (via `project.el`):
@@ -200,6 +202,13 @@ Macros
         (let ((default-directory default-dir))
           (eshell)))))
 
+  (defun austin/git-stage-all ()
+    "Stage all changes, including untracked files."
+    (interactive)
+    (magit-stage-modified t) 
+    (message "All files staged"))
+
+
 #+end_src
 
 ** Keybindings
@@ -211,138 +220,193 @@ Macros
 
     ;; Set 'SPC' to be our global leader key
     (general-create-definer austin/leader-key
-      :states '(normal insert visual emacs)
+      :states '(normal insert visual emacs treemacs)
       :keymaps 'override
       :prefix "SPC"
       :global-prefix "M-SPC") ;; access leader in insert mode
 
     (austin/leader-key
-     ;; buffers
-     "SPC"  '(switch-to-buffer :wk "switch buffer")
-     "b"   '(:ignore t :wk "buffers")
-     "bb"  '(switch-to-buffer :wk "switch buffer")
-     "bk"  '((lambda () (interactive) (kill-this-buffer)) :wk "kill this buffer")
-     "bn"  '(next-buffer :wk "next buffer")
-     "bp"  '(previous-buffer :wk "previous buffer")
-     "br"  '(revert-buffer :wk "reload Buffer")
-     
-     ;; files menu
-     "f"   '(:ignore t :wk "files"-)
-     "ff"  '(consult-find :wk "find file")
-     "fg"  '(consult-ripgrep t :wk "grep files")
-     "fr"  '(:ignore t :wk "reload")
-     "frc" '(reload-config-file :wk "reload config file")
-     "fo"  '(:ignore t :wk "open files")
+      ;; buffers
+      "SPC"  '(switch-to-buffer :wk "switch buffer")
+      "b"   '(:ignore t :wk "buffers")
+      "bb"  '(switch-to-buffer :wk "switch buffer")
+      "bk"  '((lambda () (interactive) (kill-this-buffer)) :wk "kill this buffer")
+      "bn"  '(next-buffer :wk "next buffer")
+      "bp"  '(previous-buffer :wk "previous buffer")
+      "br"  '(revert-buffer :wk "reload Buffer")
+      
+      ;; files menu
+      "f"   '(:ignore t :wk "files"-)
+      "ff"  '(consult-find :wk "find file")
+      "fg"  '(consult-ripgrep t :wk "grep files")
+      "fr"  '(rename-file :wk "rename file")
+      "f:"  '(reload-config-file :wk "reload config file")
+      "fo"  '(:ignore t :wk "open files")
 
-     "o"   '(:ignore t :wk "open")
-     "od"  '(dired-jump :wk "open directory")
-     "ot"  '(my/eshell-project-or-current-dir :wk "open terminal")
-     "oc"  '(open-config-file :wk "open config file")
-     "oh"  `(,(cmd! (dired "~")) :wk "open home")
-     "op"  '(project-switch-project :wk "open project")
+      "o"   '(:ignore t :wk "open")
+      "od"  '(dired-jump :wk "open directory")
+      "ot"  '(my/eshell-project-or-current-dir :wk "open terminal")
+      "oc"  '(open-config-file :wk "open config file")
+      "oh"  `(,(cmd! (dired "~")) :wk "open home")
+      "op"  '(project-switch-project :wk "open project")
+      "of"  '(treemacs :wk "open finder")
 
-     ;; projects menu
-     "p"   '(:ignore t :wk "projects")
-     "po"  '(project-switch-project :wk "open project")
-     "p k"  '(project-kill-buffers :wk "kill project buffer")
-     "p SPC"  '(project-switch-to-buffer :wk "switch project buffer")
+      ;; projects menu
+      "p"   '(:ignore t :wk "projects")
+      "po"  '(project-switch-project :wk "open project")
+      "p k"  '(project-kill-buffers :wk "kill project buffer")
+      "p SPC"  '(project-switch-to-buffer :wk "switch project buffer")
 
-     ;; help menu
-     "h"   '(:ignore t :wk "help")
-     "hh"  'help
-     "hd"  '(:ignore t :wk "describe")
-     "hdb" 'describe-bindings
-     "hdm" 'describe-mode
-     "hdf" 'describe-function
-     "hdk" 'describe-key
-     "hds" 'describe-symbol
-     "hdv" 'describe-variable
+      ;; help menu
+      "h"   '(:ignore t :wk "help")
+      "hh"  'help
+      "hd"  '(:ignore t :wk "describe")
+      "hdb" 'describe-bindings
+      "hdm" 'describe-mode
+      "hdf" 'describe-function
+      "hdk" 'describe-key
+      "hds" 'describe-symbol
+      "hdv" 'describe-variable
 
-     ;; window menu
-     "w"   '(:ignore t :wk "window")
-     "wl"  '(open-window-right :wk "open window right")
-     "wj"  '(open-window-below :wk "open window below")
-     "wq"  '(delete-window :wk "kill window")
-     "wk"  '(delete-window :wk "kill window")
+      ;; window menu
+      "w"   '(:ignore t :wk "window")
+      "wl"  '(open-window-right :wk "open window right")
+      "wj"  '(open-window-below :wk "open window below")
+      "wq"  '(delete-window :wk "kill window")
+      "wk"  '(delete-window :wk "kill window")
 
-     ;; emacs bindings
-     ":"   '(execute-extended-command :wk "m-x")
-     "x"   '(eval-expression :wk "emacs-eval")
+      ;; tabs
+      "t"   '(:ignore t :wk "tabs")
+      "tn"  '(tab-bar-new-tab :wk "new tab")
+      "tk"  '(tab-bar-close-tab :wk "kill tab")
+      "td"  '(tab-bar-detach-tab :wk "detach tab")
+      "tr"  '(tab-bar-rename-tab :wk "rename tab")
+      "tw"  '(tab-bar-move-window-to-tab :wk "tab this window")
+      "tc"  '(tab-bar-close-other-tabs :wk "close other tabs")
 
-     ;; lsp
-     "c"   '(:ignore t :wk "lsp")
+      "tl"  '(tab-bar-switch-to-next-tab :wk "next tab")
+      "th"  '(tab-bar-switch-to-prev-tab :wk "previous tab")
 
-     "ca"  '(:ignore t :wk "actions")
-     "caa" '(lsp-execute-code-action :wk "code action")
-     "car" '(lsp-rename :wk "rename")
-     "cao" '(lsp-organize-imports :wk "organize imports")
-     "caf" '(lsp-format-buffer :wk "format buffer")
-     "cas" '(lsp-signature-activate :wk "signature help")
+      
+      ;; emacs bindings
+      ":"   '(execute-extended-command :wk "m-x")
+      "x"   '(eval-expression :wk "emacs-eval")
 
-     "cg"   '(:ignore t :wk "goto")
-     "cgd"  '(lsp-find-definition :wk "definition")
-     "cgD"  '(lsp-find-declaration :wk "declaration")
-     "cgi"  '(lsp-find-implementation :wk "implementation")
-     "cgt"  '(lsp-find-type-definition :wk "type definition")
-     "cgr"  '(lsp-find-references :wk "references")
-     "cgs"  '(lsp-document-symbol :wk "document symbols")
-     "cgw"  '(lsp-workspace-symbol :wk "workspace symbols")
+      ;; magit
+      "g"   '(:ignore t :wk "git")
 
-     "cp"   '(:ignore t :wk "peek")
-     "cpd"  '(lsp-ui-peek-find-definitions :wk "peek def")
-     "cpi"  '(lsp-ui-peek-find-implementation :wk "peek impl")
-     "cpr"  '(lsp-ui-peek-find-references :wk "peek refs")
+      ;; Common Magit commands
+      "ga"  '(austin/git-stage-all :wk "add .")
+      "gs"  '(magit-status :wk "status")
+      "gb"  '(magit-branch :wk "branch")
+      "gc"  '(magit-commit :wk "commit")
+      "gC"  '(magit-clone :wk "clone")
+      "gp"  '(magit-push :wk "push")
+      "gf"  '(magit-fetch :wk "fetch")
+      "gl"  '(magit-log-all :wk "log")
+      "gm"  '(magit-merge :wk "merge")
+      "gr"  '(magit-rebase :wk "rebase")
+      "gd"  '(magit-diff :wk "diff")
+      "gD"  '(magit-diff-unstaged :wk "diff unstaged")
+      "gt"  '(magit-tag :wk "tag")
 
-     "ce"   '(:ignore t :wk "errors")
-     "cen"  '(flymake-goto-next-error :wk "next error")
-     "cep"  '(flymake-goto-prev-error :wk "previous error")
-     "cel"  '(lsp-ui-flycheck-list :wk "error list")
+      ;; lsp
+      "c"   '(:ignore t :wk "lsp")
 
-     "cw"   '(:ignore t :wk "workspace")
-     "cwr"  '(lsp-workspace-restart :wk "restart")
-     "cwo"  '(lsp-workspace-folders-open :wk "folders")
-     "cwa"  '(lsp-workspace-folders-add :wk "add folder")
-     "cwd"  '(lsp-workspace-folders-remove :wk "remove folder")
+      "ca"  '(:ignore t :wk "actions")
+      "caa" '(lsp-execute-code-action :wk "code action")
+      "car" '(lsp-rename :wk "rename")
+      "cao" '(lsp-organize-imports :wk "organize imports")
+      "caf" '(lsp-format-buffer :wk "format buffer")
+      "cas" '(lsp-signature-activate :wk "signature help")
 
-     "cu"   '(:ignore t :wk "ui")
-     "cud"  '(lsp-ui-doc-show :wk "show doc")
-     "cuh"  '(lsp-ui-doc-hide :wk "hide doc")
-     "cuj"  '(lsp-ui-doc-glance :wk "glance doc")
-     "cus"  '(lsp-ui-sideline-toggle-symbols-info :wk "sideline symbols")
+      "cg"   '(:ignore t :wk "goto")
+      "cgd"  '(lsp-find-definition :wk "definition")
+      "cgD"  '(lsp-find-declaration :wk "declaration")
+      "cgi"  '(lsp-find-implementation :wk "implementation")
+      "cgt"  '(lsp-find-type-definition :wk "type definition")
+      "cgr"  '(lsp-find-references :wk "references")
+      "cgs"  '(lsp-document-symbol :wk "document symbols")
+      "cgw"  '(lsp-workspace-symbol :wk "workspace symbols")
 
-     "ct"   '(:ignore t :wk "tree")
-     "ctt"  '(lsp-treemacs-symbols :wk "symbols tree")
-     "ctd"  '(lsp-treemacs-errors-list :wk "errors tree")
-     "ctr"  '(lsp-treemacs-references :wk "refs tree")
-     )
+      "cp"   '(:ignore t :wk "peek")
+      "cpd"  '(lsp-ui-peek-find-definitions :wk "peek def")
+      "cpi"  '(lsp-ui-peek-find-implementation :wk "peek impl")
+      "cpr"  '(lsp-ui-peek-find-references :wk "peek refs")
 
-    (austin/leader-key
-     :keymaps 'emacs-lisp-mode-map
-     :keymaps 'lisp-interaction-mode-map
-     "e" '(:ignore t :which-key "eval")
-     "eb" '(eval-buffer :which-key "eval buffer")
-     "er" '(eval-region :which-key "eval region")
-     "ee" '(eval-last-sexp :which-key "eval last sexp")
-     "ed" '(eval-defun :which-key "eval defun"))
+      "ce"   '(:ignore t :wk "errors")
+      "cen"  '(flymake-goto-next-error :wk "next error")
+      "cep"  '(flymake-goto-prev-error :wk "previous error")
+      "cel"  '(lsp-ui-flycheck-list :wk "error list")
 
+      "cw"   '(:ignore t :wk "workspace")
+      "cwr"  '(lsp-workspace-restart :wk "restart")
+      "cwo"  '(lsp-workspace-folders-open :wk "folders")
+      "cwa"  '(lsp-workspace-folders-add :wk "add folder")
+      "cwd"  '(lsp-workspace-folders-remove :wk "remove folder")
 
-    (austin/leader-key
-     :keymaps 'clojure-ts-mode-map
-     "e" '(:ignore t :wk "eval")
-     "ee" '(cider-eval-last-sexp :wk "eval last sexp")
-     "ec" '(cider-pprint-eval-defun-to-commentp :wk "eval to comment")
-     "ed" '(cider-eval-defun-at-point :wk "eval defun")
-     "eb" '(cider-eval-buffer :wk "eval buffer")
-     "en" '(cider-eval-ns-form :wk "cider eval ns")
-     "eN" '(cider-eval-ns :wk "cider eval ns (all)")
-     "ep" '(cider-pprint-eval-last-sexp :wk "cider pprint last sexp"))
+      "cu"   '(:ignore t :wk "ui")
+      "cud"  '(lsp-ui-doc-show :wk "show doc")
+      "cuh"  '(lsp-ui-doc-hide :wk "hide doc")
+      "cuj"  '(lsp-ui-doc-glance :wk "glance doc")
+      "cus"  '(lsp-ui-sideline-toggle-symbols-info :wk "sideline symbols")
 
-    (general-def 'normal override
-      "C-j" 'evil-window-down
-      "C-k" 'evil-window-up
-      "C-l" 'evil-window-right
-      "C-h" 'evil-window-left
+      "ct"   '(:ignore t :wk "tree")
+      "ctt"  '(lsp-treemacs-symbols :wk "symbols tree")
+      "ctd"  '(lsp-treemacs-errors-list :wk "errors tree")
+      "ctr"  '(lsp-treemacs-references :wk "refs tree")
+
+      ;; dap
+      "cdd" '(dap-debug :wk "start debug session")
+      "cdc" '(dap-continue :wk "continue")
+      "cdl" '(dap-next :wk "next/step over")
+      "cdi" '(dap-step-in :wk "step in")
+      "cdo" '(dap-step-out :wk "step out")
+      "cdb" '(dap-breakpoint-toggle :wk "toggle breakpoint")
+      "cdB" '(dap-breakpoint-condition :wk "conditional breakpoint")
+      "cdv" '(dap-ui-locals :wk "locals")
+      "cds" '(dap-ui-sessions :wk "sessions")
+      "cdS" '(dap-ui-sessions-restore :wk "restore sessions")
+      "cdr" '(dap-restart-frame :wk "restart frame")
+      "cdR" '(dap-restart-debug-session :wk "restart session")
+      "cdt" '(dap-tooltip-mode :wk "tooltip mode")
+      "cdu" '(dap-ui-mode :wk "ui mode")
       )
+
+    (austin/leader-key
+      :keymaps 'emacs-lisp-mode-map
+      :keymaps 'lisp-interaction-mode-map
+      "e" '(:ignore t :which-key "eval")
+      "eb" '(eval-buffer :which-key "eval buffer")
+      "er" '(eval-region :which-key "eval region")
+      "ee" '(eval-last-sexp :which-key "eval last sexp")
+      "ed" '(eval-defun :which-key "eval defun"))
+
+
+    (austin/leader-key
+      :keymaps 'clojure-ts-mode-map
+      "e" '(:ignore t :wk "eval")
+      "ee" '(cider-eval-last-sexp :wk "eval last sexp")
+      "ec" '(cider-pprint-eval-defun-to-commentp :wk "eval to comment")
+      "ed" '(cider-eval-defun-at-point :wk "eval defun")
+      "eb" '(cider-eval-buffer :wk "eval buffer")
+      "en" '(cider-eval-ns-form :wk "cider eval ns")
+      "eN" '(cider-eval-ns :wk "cider eval ns (all)")
+      "ep" '(cider-pprint-eval-last-sexp :wk "cider pprint last sexp"))
+
+    (general-define-key
+     :states '(normal insert visual emacs treemacs)
+     :keymaps 'override
+     ;; window movement bindings
+     "C-j" 'evil-window-down
+     "C-k" 'evil-window-up
+     "C-l" 'evil-window-right
+     "C-h" 'evil-window-left
+
+     ;; tab movement bindings
+     "C-<left>" 'tab-bar-switch-to-prev-tab
+     "C-<right>" 'tab-bar-switch-to-next-tab
+     )
 
     (general-def 'visual override
       "gc" 'comment-dwim 
@@ -511,6 +575,13 @@ Macros
 #+end_src
 
 * Plugins
+** magit
+#+begin_src emacs-lisp
+      (use-package transient
+        :ensure t)
+      (use-package magit)
+#+end_src
+
 ** LSP
 #+begin_src emacs-lisp
   (use-package flycheck
@@ -549,6 +620,13 @@ Macros
 ** Debugger
 #+begin_src emacs-lisp
 (use-package dap-mode)
+#+end_src
+
+** Treemacs
+#+begin_src emacs-lisp
+(use-package treemacs)
+(use-package treemacs-evil)
+(use-package treemacs-magit)
 #+end_src
 
 ** Which-Key
