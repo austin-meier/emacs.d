@@ -497,7 +497,7 @@ Macros
   ;; be quit about reverting
   (setq auto-revert-verbose nil)
   ;; check for changes every 5 seconds
-  (setq auto-revert-interval 3)
+  (setq auto-revert-interval 5)
   ;; enable the auto-revert mode
   (global-auto-revert-mode 1)
 #+end_src
