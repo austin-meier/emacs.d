@@ -269,8 +269,8 @@ Macros
       
       ;; files menu
       "f"   '(:ignore t :wk "files"-)
-      "ff"  '(consult-fd :wk "find file")
-      "fc"  '(find-file :wk "create file")
+      "ff"  '(find-file :wk "find file")
+      "fs"  '(consult-fd :wk "file search")
       "fd"  '(dired-create-directory "create directory")
       "fg"  '(consult-ripgrep t :wk "grep files")
       "fs"  '(save-buffer :wk "save file") 
