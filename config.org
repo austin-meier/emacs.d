@@ -13,7 +13,6 @@
   - [[#helpers][helpers]]
   - [[#keybindings][Keybindings]]
 - [[#emacs-configuration][emacs configuration]]
-  - [[#ansi-color][ansi color]]
   - [[#reload-files-after-detecting-disk-change][Reload files after detecting disk change]]
   - [[#disable-toolbar--scrollbars][Disable Toolbar + Scrollbars]]
   - [[#line-numbers][Line Numbers]]
@@ -41,6 +40,7 @@
 - [[#language-specific][Language Specific]]
   - [[#emacs-lisp][Emacs lisp]]
   - [[#clojure][Clojure]]
+  - [[#ada][Ada]]
 
 * Priority
 
@@ -465,31 +465,7 @@ Macros
 #+end_src
 
 * emacs configuration
-
-** ansi color
-#+begin_src emacs-lisp
-  ;; (require 'ansi-color)
-
-  ;; (defun austin/remove-carriage-return (output)
-  ;;   "Replace carriage return characters with newline in Eshell output."
-  ;;   (replace-regexp-in-string "\r" "\n" output))
-
-  ;; (defun austin/apply-ansi-color ()
-  ;;   "Convert ANSI color sequences to faces."
-  ;;   (ansi-color-apply-on-region eshell-last-output-start
-  ;;                               eshell-last-output-end))
-  ;; (add-hook 'eshell-mode-hook
-  ;;           (lambda ()
-  ;;             (setq eshell-ansi-color t)
-  ;; 	    (setenv "TERM" "xterm-256color")
-
-  ;; 	    (add-hook 'eshell-output-filter-functions
-  ;; 		      'austin/apply-ansi-color)
-  ;; 	    (add-hook 'eshell-preoutput-filter-functions
-  ;; 		      'austin/remove-carriage-return)))
-#+end_src
 ** Reload files after detecting disk change
-
 #+begin_src emacs-lisp
 
   ;; also check in dired buffers
@@ -506,6 +482,7 @@ Macros
   (setq inhibit-startup-screen t)
   (tool-bar-mode -1)
   (scroll-bar-mode -1)
+  (menu-bar-mode -1)
 #+end_src
 
 ** Line Numbers
@@ -595,8 +572,8 @@ Macros
   (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
   (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
   :init
-  (savehist-mode)
-  (vertico-mode))
+  (savehist-mode 1)
+  (vertico-mode 1))
 
 #+end_src
 
@@ -791,4 +768,9 @@ Macros
   ;; (when (eq system-type 'windows-nt)
   ;;   (setq cider-clojure-cli-parameters
   ;;       "-Sdeps \'{:deps {nrepl/nrepl {:mvn/version \"1.5.1\"} cider/cider-nrepl {:mvn/version \"0.58.0\"}} :aliases {:cider/nrepl {:main-opts [\"-m\" \"nrepl.cmdline\" \"--middleware\" \"[cider.nrepl/cider-middleware]\"]}}}\' -M:cider/nrepl"))
+#+end_src
+** Ada
+#+begin_src emacs-lisp
+    (use-package ada-ts-mode
+      :hook ((json-ts-mode . lsp)))
 #+end_src
