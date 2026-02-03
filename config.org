@@ -128,6 +128,7 @@ TODO:
     (setq evil-split-window-below t)
     (setq evil-emacs-state-modes nil)
     (setq evil-undo-system 'undo-redo)
+    (setq evil-kill-on-visual-paste nil)
     :config
     (evil-mode 1))
 
