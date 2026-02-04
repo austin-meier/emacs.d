@@ -10,6 +10,7 @@
   - [[#cross-platform][cross-platform]]
   - [[#elpaca][elpaca]]
   - [[#evil-vim-mode][evil vim mode]]
+  - [[#dash][dash]]
   - [[#helpers][helpers]]
   - [[#keybindings][Keybindings]]
 - [[#emacs-configuration][emacs configuration]]
@@ -45,11 +46,6 @@
 * Priority
 
 TODO:
-- ripgrep/file searching by name and grep + project searching
-- paredit/smartparens
-- CIDER
-- color mode on eshell
-- debugger
 ** cross-platform
 #+begin_src emacs-lisp
   ;; for the eat terminal emulator we need stty.exe which git provides
@@ -57,6 +53,7 @@ TODO:
   (when (eq system-type 'windows-nt)
     (add-to-list 'exec-path "C:/Program Files/Git/usr/bin"))
 #+end_src
+
 
 ** elpaca
 #+begin_src emacs-lisp
@@ -144,8 +141,12 @@ TODO:
   (use-package emacs :ensure nil :config (setq ring-bell-function #'ignore))
 #+end_src
 
+** dash
+#+begin_src emacs-lisp
+(use-package dash)
+#+end_src
+
 ** helpers
-Macros
 #+begin_src emacs-lisp
 (defmacro cmd! (&rest body)
   `(lambda () (interactive) ,@body))
@@ -519,10 +520,10 @@ Macros
   ;; Text Wrap
   (global-visual-line-mode nil)
   ;; Font Style 
-  (setq-default font-height 125)
+  (setq-default font-height 110)
   (setq-default line-spacing 0.2)
 
-  (let ((font-name "Lucida Console"))
+  (let ((font-name "AdwaitaMono Nerd Font"))
     (when (member font-name (font-family-list))
       ;; Set the global default first
       (set-face-attribute 'default nil
