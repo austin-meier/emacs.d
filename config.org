@@ -764,11 +764,28 @@ Bindings: =C-;= and =SPC ;= for ~embark-act~, =M-.= for ~embark-dwim~
     :init (add-hook 'org-mode-hook 'toc-org-enable))
 #+end_src
 
-** Org Bullets
+** org-modern
+Modernized rendering for headlines, list bullets, code blocks, tables, and
+keywords. Supersedes ~org-bullets~ (which only styled stars).
 #+begin_src emacs-lisp
   (add-hook 'org-mode-hook 'org-indent-mode)
-  (use-package org-bullets)
-  (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+  (use-package org-modern
+    :hook ((org-mode . org-modern-mode)
+           (org-agenda-finalize . org-modern-agenda)))
+#+end_src
+
+** org-fragtog (auto LaTeX preview)
+Renders LaTeX fragments to images when the cursor leaves them and unrenders
+them when you move back in. No more manual ~C-c C-x C-l~.
+
+Gated on the ~latex~ binary being on PATH — if you don't have a TeX
+distribution installed, this use-package form skips entirely (no install,
+no hook, no errors when moving past a fragment). Install LaTeX and restart
+Emacs to enable.
+#+begin_src emacs-lisp
+(use-package org-fragtog
+  :if (executable-find "latex")
+  :hook (org-mode . org-fragtog-mode))
 #+end_src
 
 * Plugins
