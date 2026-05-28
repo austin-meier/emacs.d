@@ -275,7 +275,7 @@ TODO:
       "fs"  '(consult-fd :wk "file search")
       "fd"  '(dired-create-directory "create directory")
       "fg"  '(consult-ripgrep t :wk "grep files")
-      "fs"  '(save-buffer :wk "save file") 
+      "fw"  '(save-buffer :wk "save file") 
       "fr"  '(rename-file :wk "rename file")
       "f:"  '(reload-config-file :wk "reload config file")
       "fo"  '(:ignore t :wk "open files")
