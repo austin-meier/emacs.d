@@ -146,6 +146,15 @@ TODO:
 (use-package dash)
 #+end_src
 
+** no-littering
+Keep ~user-emacs-directory~ tidy by redirecting package state files into
+=var/= and =etc/= subdirectories. Load early so other packages pick up the
+redirected paths.
+#+begin_src emacs-lisp
+(use-package no-littering
+  :demand t)
+#+end_src
+
 ** helpers
 #+begin_src emacs-lisp
 (defmacro cmd! (&rest body)
@@ -226,6 +235,38 @@ TODO:
         (tab-bar-new-tab)
         (switch-to-buffer last-buf)))
 
+  (defun austin/text-scale-increase ()
+    "Bump the default face height globally by 10 units (~1pt)."
+    (interactive)
+    (set-face-attribute 'default nil
+                        :height (+ (face-attribute 'default :height) 10)))
+
+  (defun austin/text-scale-decrease ()
+    "Reduce the default face height globally by 10 units."
+    (interactive)
+    (set-face-attribute 'default nil
+                        :height (- (face-attribute 'default :height) 10)))
+
+  (defun austin/text-scale-reset ()
+    "Reset the default face height to `font-height'."
+    (interactive)
+    (set-face-attribute 'default nil :height font-height))
+
+  (defun austin/cargo-build ()
+    "Run `cargo build' in the project root (cargo finds Cargo.toml itself)."
+    (interactive)
+    (compile "cargo build"))
+
+  (defun austin/cargo-run ()
+    "Run `cargo run' in the project root."
+    (interactive)
+    (compile "cargo run"))
+
+  (defun austin/cargo-test ()
+    "Run `cargo test' in the project root."
+    (interactive)
+    (compile "cargo test"))
+
   (defun austin/clj-debug-repl ()
     "Jack-in CIDER with Flow-Storm and nREPL middleware for Clojure only."
     (interactive)
@@ -260,6 +301,18 @@ TODO:
       :global-prefix "M-SPC") ;; access leader in insert mode
 
     (austin/leader-key
+      ;; ai (claude-code-ide)
+      "a"   '(:ignore t :wk "ai")
+      "al"  '(claude-code-ide :wk "launch chat (right)")
+      "at"  '(claude-code-ide-toggle :wk "toggle window")
+      "ar"  '(claude-code-ide-resume :wk "resume session")
+      "ac"  '(claude-code-ide-continue :wk "continue last")
+      "aq"  '(claude-code-ide-stop :wk "stop session")
+      "ap"  '(claude-code-ide-send-prompt :wk "send prompt")
+      "a@"  '(claude-code-ide-insert-at-mentioned :wk "insert @file")
+      "as"  '(claude-code-ide-list-sessions :wk "list sessions")
+      "am"  '(claude-code-ide-menu :wk "transient menu")
+
       ;; buffers
       "SPC" '(switch-to-buffer :wk "switch buffer")
       "b"   '(:ignore t :wk "buffers")
@@ -270,22 +323,21 @@ TODO:
       "br"  '(revert-buffer :wk "reload Buffer")
       
       ;; files menu
-      "f"   '(:ignore t :wk "files"-)
+      "f"   '(:ignore t :wk "files")
       "ff"  '(find-file :wk "find file")
       "fs"  '(consult-fd :wk "file search")
-      "fd"  '(dired-create-directory "create directory")
-      "fg"  '(consult-ripgrep t :wk "grep files")
-      "fw"  '(save-buffer :wk "save file") 
-      "fr"  '(rename-file :wk "rename file")
+      "fd"  '(dired-create-directory :wk "create directory")
+      "fg"  '(consult-ripgrep :wk "grep files")
+      "fw"  '(save-buffer :wk "save file")
+      "fr"  '(consult-recent-file :wk "recent files")
+      "fR"  '(rename-file :wk "rename file")
       "f:"  '(reload-config-file :wk "reload config file")
-      "fo"  '(:ignore t :wk "open files")
 
       "o"   '(:ignore t :wk "open")
       "od"  '(dired-jump :wk "open directory")
       "ot"  '(my/eshell-project-or-current-dir :wk "open terminal")
       "oc"  '(open-config-file :wk "open config file")
       "oh"  `(,(cmd! (dired "~")) :wk "open home")
-      "op"  '(project-switch-project :wk "open project")
       "of"  '(treemacs :wk "open finder")
 
       ;; projects menu
@@ -300,10 +352,10 @@ TODO:
       "hd"  '(:ignore t :wk "describe")
       "hdb" 'describe-bindings
       "hdm" 'describe-mode
-      "hdf" 'describe-function
-      "hdk" 'describe-key
-      "hds" 'describe-symbol
-      "hdv" 'describe-variable
+      "hdf" 'helpful-callable
+      "hdk" 'helpful-key
+      "hds" 'helpful-symbol
+      "hdv" 'helpful-variable
 
       ;; window menu
       "w"   '(:ignore t :wk "window")
@@ -327,6 +379,7 @@ TODO:
       
       ;; emacs bindings
       ":"   '(execute-extended-command :wk "m-x")
+      ";"   '(embark-act :wk "embark act")
       "x"   '(eval-expression :wk "emacs-eval")
 
       ;; magit
@@ -415,14 +468,22 @@ TODO:
       )
 
     (austin/leader-key
-      :keymaps 'emacs-lisp-mode-map
-      :keymaps 'lisp-interaction-mode-map
-      "e" '(:ignore t :which-key "eval")
-      "eb" '(eval-buffer :which-key "eval buffer")
-      "er" '(eval-region :which-key "eval region")
-      "ee" '(eval-last-sexp :which-key "eval last sexp")
-      "ed" '(eval-defun :which-key "eval defun"))
+      :keymaps '(emacs-lisp-mode-map lisp-interaction-mode-map)
+      "e" '(:ignore t :wk "eval")
+      "eb" '(eval-buffer :wk "eval buffer")
+      "er" '(eval-region :wk "eval region")
+      "ee" '(eval-last-sexp :wk "eval last sexp")
+      "ed" '(eval-defun :wk "eval defun"))
 
+
+    (austin/leader-key
+      :keymaps 'rust-ts-mode-map
+      "e"  '(:ignore t :wk "build/run")
+      "eb" '(austin/cargo-build :wk "cargo build")
+      "er" '(austin/cargo-run :wk "cargo run")
+      "et" '(austin/cargo-test :wk "cargo test")
+      "eR" '(recompile :wk "recompile last")
+      "ec" '(project-compile :wk "project compile…"))
 
     (austin/leader-key
       :keymaps 'clojure-ts-mode-map
@@ -456,6 +517,12 @@ TODO:
      ;; tab movement bindings
      "C-<left>" 'tab-bar-switch-to-prev-tab
      "C-<right>" 'tab-bar-switch-to-next-tab
+
+     ;; font size (browser-style; affects all frames/buffers)
+     "C-="  'austin/text-scale-increase
+     "C-+"  'austin/text-scale-increase
+     "C--"  'austin/text-scale-decrease
+     "C-0"  'austin/text-scale-reset
      )
 
     (general-def 'visual override
@@ -472,12 +539,29 @@ TODO:
 
   ;; also check in dired buffers
   (setq global-auto-revert-non-file-buffers t)
-  ;; be quit about reverting
+  ;; be quiet about reverting
   (setq auto-revert-verbose nil)
-  ;; check for changes every 5 seconds
-  (setq auto-revert-interval 5)
+  ;; use OS file-notify watchers instead of polling — faster and more responsive
+  (setq auto-revert-use-notify t)
   ;; enable the auto-revert mode
   (global-auto-revert-mode 1)
+#+end_src
+
+** Performance
+Low-risk, high-impact one-liners. ~gcmh~ lives under Plugins.
+#+begin_src emacs-lisp
+  ;; Handle minified / pathologically long lines gracefully instead of freezing.
+  (global-so-long-mode 1)
+
+  ;; Skip font-cache compaction during GC. Relevant with nerd-icons installed,
+  ;; since rescanning icon fonts on every GC is slow.
+  (setq inhibit-compacting-font-caches t)
+
+  ;; Skip implicit frame resizes triggered by font / mode changes — faster startup.
+  (setq frame-inhibit-implied-resize t)
+
+  ;; Don't pop the *Warnings* buffer for every native-compilation warning.
+  (setq native-comp-async-report-warnings-errors 'silent)
 #+end_src
 ** Disable Toolbar + Scrollbars
 #+begin_src emacs-lisp
@@ -485,6 +569,9 @@ TODO:
   (tool-bar-mode -1)
   (scroll-bar-mode -1)
   (menu-bar-mode -1)
+  ;; Start every frame maximized — avoids the "frame taller than the screen"
+  ;; problem when font height makes the default row count overflow.
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
 #+end_src
 
 ** Line Numbers
@@ -514,13 +601,25 @@ TODO:
   (doom-themes-org-config))
 #+end_src
 
+** Doom Modeline
+Modern replacement for the default modeline. Hides the minor-mode flood by
+default; use ~M-x describe-mode~ when you actually need to inspect active modes.
+#+begin_src emacs-lisp
+(use-package doom-modeline
+  :init (doom-modeline-mode 1)
+  :custom
+  (doom-modeline-height 25)
+  (doom-modeline-bar-width 3)
+  (doom-modeline-minor-modes nil)        ;; suppress minor-mode lighters
+  (doom-modeline-buffer-encoding nil)    ;; hide UTF-8 / LF tag
+  (doom-modeline-buffer-file-name-style 'truncate-with-project))
+#+end_src
+
 ** Fonts/Text
 #+begin_src emacs-lisp
 
-  ;; Text Wrap
-  (global-visual-line-mode nil)
-  ;; Font Style 
-  (setq-default font-height 110)
+  ;; Font Style
+  (defvar font-height 90)
   (setq-default line-spacing 0.2)
 
   (let ((font-name "AdwaitaMono Nerd Font"))
@@ -535,7 +634,7 @@ TODO:
       ;; Explicitly ensure the minibuffer prompt matches
       (set-face-attribute 'minibuffer-prompt nil
                           :font font-name
-                          :height 120
+                          :height font-height
                           :weight 'bold) ; Keeping prompt bold for clarity
 
       ;; If you use a completion UI that uses variable-pitch, 
@@ -596,8 +695,49 @@ TODO:
 #+begin_src emacs-lisp
 (use-package consult
   :ensure t
+  :init (recentf-mode 1)
   :custom
   (consult-preview-at-point-mode))
+#+end_src
+
+** marginalia
+Adds annotations (docstrings, file sizes, key bindings) next to vertico
+candidates. Pairs with consult/embark.
+
+~compat~ is pinned to upstream GitHub because the GNU ELPA copy lags behind
+the version marginalia/embark require (they need compat 31, ELPA still ships
+30.x).
+#+begin_src emacs-lisp
+(use-package compat
+  :ensure (compat :host github :repo "emacs-compat/compat"))
+
+(use-package marginalia
+  :after compat
+  :init (marginalia-mode))
+#+end_src
+
+** embark
+"Right-click menu" for the minibuffer and for symbols at point. ~embark-act~
+opens a contextual action menu for the current candidate or thing at point;
+~embark-dwim~ runs the most-likely action without prompting; ~embark-export~
+snapshots the current candidate list into a real major-mode buffer (e.g.
+ripgrep results → editable grep buffer with wgrep).
+
+Bindings: =C-;= and =SPC ;= for ~embark-act~, =M-.= for ~embark-dwim~
+(stays compatible with xref's jump-to-definition on code symbols).
+#+begin_src emacs-lisp
+(use-package embark
+  :after compat
+  :bind (("C-;" . embark-act)
+         ("M-." . embark-dwim))
+  :init
+  ;; Replace the built-in prefix help with embark's searchable variant
+  ;; (gives a vertico picker when you pause on a prefix key).
+  (setq prefix-help-command #'embark-prefix-help-command))
+
+(use-package embark-consult
+  :after (embark consult)
+  :hook (embark-collect-mode . consult-preview-at-point-mode))
 #+end_src
 
 ** Company Mode
@@ -659,10 +799,14 @@ TODO:
     :hook (lsp-mode . flycheck-mode))
   (use-package
     lsp-mode
+    :init
+    ;; Performance tuning for lsp-mode
+    (setq read-process-output-max (* 1024 1024)) ;; 1MB pipe buffer
+    (setq gc-cons-threshold 100000000)           ;; 100MB GC threshold
     :config
     (setq lsp-headerline-breadcrumb-enable nil)
     (setq lsp-diagnostics-provider :flycheck)
-    :init
+    (setq lsp-auto-guess-root t)
     :hook ((typescript-ts-mode . lsp)
            (tsx-ts-mode . lsp)
            (rust-ts-mode . lsp)
@@ -697,7 +841,12 @@ TODO:
 
 ** Treemacs
 #+begin_src emacs-lisp
-(use-package treemacs)
+(use-package treemacs
+  :config
+  (treemacs-follow-mode 1)
+  (treemacs-project-follow-mode 1)
+  (treemacs-filewatch-mode 1)
+  (treemacs-git-mode 'deferred))
 (use-package treemacs-evil)
 (use-package treemacs-magit)
 #+end_src
@@ -726,6 +875,87 @@ TODO:
 (use-package paredit)
 #+end_src
 
+** Lispyville
+Evil-aware structural editing on top of paredit. The key theme below gives
+sexp-safe versions of evil's =d=, =c=, =y= operators plus slurp/barf and
+extra movement bindings — without it, evil edits can shred unbalanced parens.
+#+begin_src emacs-lisp
+(use-package lispyville
+  :hook ((emacs-lisp-mode       . lispyville-mode)
+         (lisp-interaction-mode . lispyville-mode)
+         (clojure-ts-mode       . lispyville-mode))
+  :config
+  (lispyville-set-key-theme
+   '(operators
+     c-w
+     additional
+     additional-movement
+     slurp/barf-cp
+     wrap)))
+#+end_src
+
+** Aggressive Indent
+Auto-reindents the surrounding form as you type — feels right in lisps.
+#+begin_src emacs-lisp
+(use-package aggressive-indent
+  :hook ((emacs-lisp-mode       . aggressive-indent-mode)
+         (lisp-interaction-mode . aggressive-indent-mode)
+         (clojure-ts-mode       . aggressive-indent-mode)))
+#+end_src
+
+** Helpful
+Richer ~describe-*~ buffers (source snippets, key bindings, references).
+Wired up under the =SPC h d= prefix.
+#+begin_src emacs-lisp
+(use-package helpful)
+#+end_src
+
+** Avy
+Jump to any character on screen with a 2-char prompt. Bound to =s= in normal
+and visual evil states — works across all visible windows/lines, not just the
+current line like vim's built-in =s=.
+#+begin_src emacs-lisp
+(use-package avy
+  :after general
+  :config
+  (general-define-key
+   :states '(normal visual)
+   "s" 'avy-goto-char-timer))
+#+end_src
+
+** GCMH (Garbage Collector Magic Hack)
+Defers garbage collection to idle time so interactive operations (typing,
+completion, scrolling) don't pause for GC. Pairs with the lsp-mode
+=gc-cons-threshold= bump.
+#+begin_src emacs-lisp
+(use-package gcmh
+  :init (gcmh-mode 1))
+#+end_src
+
+** Dashboard (startup screen)
+Recents, projects, agenda, and bookmarks on launch. Plays nicely with evil
+out of the box (unlike enlight). Uses ~project.el~ as the project backend
+and ~nerd-icons~ for entry icons.
+#+begin_src emacs-lisp
+(use-package dashboard
+  :demand t
+  :custom
+  (dashboard-startup-banner 'logo)
+  (dashboard-center-content t)
+  (dashboard-items '((recents   . 5)
+                     (projects  . 5)
+                     (agenda    . 5)
+                     (bookmarks . 3)))
+  (dashboard-projects-backend 'project-el)
+  (dashboard-icon-type 'nerd-icons)
+  (dashboard-set-heading-icons t)
+  (dashboard-set-file-icons t)
+  (dashboard-week-agenda nil)        ;; today only, not the whole week
+  :config
+  (dashboard-setup-startup-hook)
+  (setq initial-buffer-choice (lambda () (get-buffer-create dashboard-buffer-name))))
+#+end_src
+
 ** Claude Code
 
 #+begin_src emacs-lisp
@@ -735,6 +965,8 @@ TODO:
     (use-package claude-code-ide
       :after cond-let
       :bind ("C-c C-'" . claude-code-ide-menu)
+      :custom
+      (claude-code-ide-window-side 'right)  ;; chat window opens on the right
       :config
       (claude-code-ide-emacs-tools-setup)))
   (setq claude-code-ide-terminal-backend 'eat)
@@ -758,6 +990,15 @@ TODO:
   (use-package rainbow-delimiters)
   (use-package clojure-ts-mode)
 
+  ;; Surface clj-kondo lints via flycheck. Gated on the `clj-kondo' binary
+  ;; being on PATH so a missing install is a silent no-op rather than a load
+  ;; error. Install with your package manager (`brew install borkdude/brew/clj-kondo'
+  ;; / `pacman -S clj-kondo' / etc.) and restart to enable.
+  (use-package flycheck-clj-kondo
+    :after flycheck
+    :if (executable-find "clj-kondo")
+    :config (require 'flycheck-clj-kondo))
+
   ;; Turn on rainbow delimeters and activate the LSP when entering
   ;; a clojure file
   (add-hook 'clojure-ts-mode-hook
@@ -774,5 +1015,5 @@ TODO:
 ** Ada
 #+begin_src emacs-lisp
     (use-package ada-ts-mode
-      :hook ((json-ts-mode . lsp)))
+      :hook ((ada-ts-mode . lsp)))
 #+end_src
