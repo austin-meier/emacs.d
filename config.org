@@ -810,10 +810,28 @@ Emacs to enable.
 #+end_src
 
 ** LSP
+Each language hook is gated on its server being on =PATH= — missing servers
+are a silent no-op instead of an error when you open a file. See [[file:setup.md][setup.md]]
+for install commands.
 #+begin_src emacs-lisp
   (use-package flycheck
     :ensure t
     :hook (lsp-mode . flycheck-mode))
+
+  (defun austin/lsp-ts ()
+    "Start `lsp' only if typescript-language-server is on PATH."
+    (when (executable-find "typescript-language-server") (lsp)))
+
+  (defun austin/lsp-rust ()
+    "Start `lsp' only if rust-analyzer is on PATH."
+    (when (executable-find "rust-analyzer") (lsp)))
+
+  (defun austin/lsp-json ()
+    "Start `lsp' only if a JSON language server is on PATH."
+    (when (or (executable-find "vscode-json-language-server")
+              (executable-find "vscode-json-languageserver"))
+      (lsp)))
+
   (use-package
     lsp-mode
     :init
@@ -824,10 +842,10 @@ Emacs to enable.
     (setq lsp-headerline-breadcrumb-enable nil)
     (setq lsp-diagnostics-provider :flycheck)
     (setq lsp-auto-guess-root t)
-    :hook ((typescript-ts-mode . lsp)
-           (tsx-ts-mode . lsp)
-           (rust-ts-mode . lsp)
-           (json-ts-mode . lsp)
+    :hook ((typescript-ts-mode . austin/lsp-ts)
+           (tsx-ts-mode . austin/lsp-ts)
+           (rust-ts-mode . austin/lsp-rust)
+           (json-ts-mode . austin/lsp-json)
            (lsp-mode . lsp-enable-which-key-integration))
     :commands lsp)
 
@@ -974,19 +992,21 @@ and ~nerd-icons~ for entry icons.
 #+end_src
 
 ** Claude Code
-
+Only loads when the =claude= CLI is on =PATH= — install instructions in
+[[file:setup.md][setup.md]]. Restart Emacs after installing the CLI to pick up the package.
 #+begin_src emacs-lisp
-  (use-package cond-let)
+  (when (executable-find "claude")
+    (use-package cond-let)
 
-  (elpaca (claude-code-ide :host github :repo "manzaltu/claude-code-ide.el")
-    (use-package claude-code-ide
-      :after cond-let
-      :bind ("C-c C-'" . claude-code-ide-menu)
-      :custom
-      (claude-code-ide-window-side 'right)  ;; chat window opens on the right
-      :config
-      (claude-code-ide-emacs-tools-setup)))
-  (setq claude-code-ide-terminal-backend 'eat)
+    (elpaca (claude-code-ide :host github :repo "manzaltu/claude-code-ide.el")
+      (use-package claude-code-ide
+        :after cond-let
+        :bind ("C-c C-'" . claude-code-ide-menu)
+        :custom
+        (claude-code-ide-window-side 'right)  ;; chat window opens on the right
+        :config
+        (claude-code-ide-emacs-tools-setup)))
+    (setq claude-code-ide-terminal-backend 'eat))
 #+end_src
 
 * Language Specific
@@ -1031,6 +1051,10 @@ and ~nerd-icons~ for entry icons.
 #+end_src
 ** Ada
 #+begin_src emacs-lisp
-    (use-package ada-ts-mode
-      :hook ((ada-ts-mode . lsp)))
+  (defun austin/lsp-ada ()
+    "Start `lsp' only if ada_language_server is on PATH."
+    (when (executable-find "ada_language_server") (lsp)))
+
+  (use-package ada-ts-mode
+    :hook ((ada-ts-mode . austin/lsp-ada)))
 #+end_src
